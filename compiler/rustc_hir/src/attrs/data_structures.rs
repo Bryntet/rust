@@ -994,6 +994,9 @@ pub enum AttributeKind {
     /// Represents `#[rustc_simd_monomorphize_lane_limit = "N"]`.
     RustcSimdMonomorphizeLaneLimit(Limit),
 
+    /// Represents `#[rustc_test_marker]`
+    RustcTestMarker { fn_name: Symbol },
+
     /// Represents `#[sanitize]`
     ///
     /// the on set and off set are distjoint since there's a third option: unset.
