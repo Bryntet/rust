@@ -5,7 +5,7 @@ use rustc_ast::token::DocFragmentKind;
 use rustc_ast::{AttrItemKind, AttrStyle, NodeId, Safety};
 use rustc_data_structures::fx::FxIndexSet;
 use rustc_errors::DiagCtxtHandle;
-use rustc_feature::{AttributeTemplate, Features};
+use rustc_feature::{AttributeGate, AttributeTemplate, Features};
 use rustc_hir::attrs::AttributeKind;
 use rustc_hir::lints::AttributeLintKind;
 use rustc_hir::{AttrArgs, AttrItem, AttrPath, Attribute, HashIgnoredAttrId, Target};
@@ -169,6 +169,7 @@ impl<'sess> AttributeParser<'sess, Early> {
         template: &AttributeTemplate,
         allow_expr_metavar: AllowExprMetavar,
         expected_safety: AttributeSafety,
+        gated: AttributeGate,
     ) -> Option<T> {
         let ast::AttrKind::Normal(normal_attr) = &attr.kind else {
             panic!("parse_single called on a doc attr")
@@ -192,6 +193,7 @@ impl<'sess> AttributeParser<'sess, Early> {
             path,
             Some(normal_attr.item.unsafety),
             expected_safety,
+            gated,
             ParsedDescription::Attribute,
             target_span,
             target_node_id,
@@ -214,6 +216,7 @@ impl<'sess> AttributeParser<'sess, Early> {
         attr_path: AttrPath,
         attr_safety: Option<Safety>,
         expected_safety: AttributeSafety,
+        gated: AttributeGate,
         parsed_description: ParsedDescription,
         target_span: Span,
         target_node_id: NodeId,
@@ -238,6 +241,8 @@ impl<'sess> AttributeParser<'sess, Early> {
                 &mut emit_lint,
             )
         }
+        let gate_kind = parser.check_attribute_gate(gated, inner_span);
+
         let attr_id = sess.psess.attr_id_generator.mk_attr_id();
         let mut cx: AcceptContext<'_, 'sess, Early> = AcceptContext {
             shared: SharedContext {
@@ -253,6 +258,8 @@ impl<'sess> AttributeParser<'sess, Early> {
             template,
             attr_path,
             attr_id,
+            do_nothing_due_to_gate: gate_kind
+                .is_some_and(|gate| matches!(gate, rustc_feature::GateKind::Ignore)),
         };
         parse_fn(&mut cx, args)
     }
@@ -364,6 +371,7 @@ impl<'sess, S: Stage> AttributeParser<'sess, S> {
                             accept.safety,
                             &mut emit_lint,
                         );
+                        let gate_kind = self.check_attribute_gate(accept.gated, n.item.span());
 
                         let Some(args) = ArgParser::from_attr_args(
                             args,
@@ -420,6 +428,9 @@ impl<'sess, S: Stage> AttributeParser<'sess, S> {
                             template: &accept.template,
                             attr_path: attr_path.clone(),
                             attr_id: attr.id,
+                            do_nothing_due_to_gate: gate_kind.is_some_and(|gate| {
+                                matches!(gate, rustc_feature::GateKind::Ignore)
+                            }),
                         };
 
                         (accept.accept_fn)(&mut cx, &args);

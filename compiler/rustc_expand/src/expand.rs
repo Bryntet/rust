@@ -15,7 +15,7 @@ use rustc_ast::{
 use rustc_ast_pretty::pprust;
 use rustc_attr_parsing::parser::AllowExprMetavar;
 use rustc_attr_parsing::{
-    AttributeParser, AttributeSafety, CFG_TEMPLATE, Early, EvalConfigResult, ShouldEmit,
+    AttributeParser, AttributeSafety, CFG_TEMPLATE, EvalConfigResult, ShouldEmit,
     eval_config_entry, parse_cfg, validate_attr,
 };
 use rustc_data_structures::flat_map_in_place::FlatMapInPlace;
@@ -2204,7 +2204,7 @@ impl<'a, 'b> InvocationCollector<'a, 'b> {
                     cfg_pos = Some(pos); // a cfg attr found, no need to search anymore
                     break;
                 } else if attr_pos.is_none()
-                    && !name.is_some_and(rustc_feature::is_builtin_attr_name)
+                    && !name.is_some_and(rustc_attr_parsing::is_builtin_attr_name)
                 {
                     attr_pos = Some(pos); // a non-cfg attr found, still may find a cfg attr
                 }
@@ -2296,6 +2296,7 @@ impl<'a, 'b> InvocationCollector<'a, 'b> {
             &CFG_TEMPLATE,
             AllowExprMetavar::Yes,
             AttributeSafety::Normal,
+            rustc_feature::AttributeGate::Ungated,
         ) else {
             // Cfg attribute was not parsable, give up
             return EvalConfigResult::True;

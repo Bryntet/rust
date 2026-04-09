@@ -75,6 +75,7 @@ impl<S: Stage> AttributeParser<S> for StabilityParser {
         (
             &[sym::stable],
             template!(List: &[r#"feature = "name", since = "version""#]),
+            Ungated,
             |this, cx, args| {
                 reject_outside_std!(cx);
                 if !this.check_duplicate(cx)
@@ -87,6 +88,7 @@ impl<S: Stage> AttributeParser<S> for StabilityParser {
         (
             &[sym::unstable],
             template!(List: &[r#"feature = "name", reason = "...", issue = "N""#]),
+            Ungated,
             |this, cx, args| {
                 reject_outside_std!(cx);
                 if !this.check_duplicate(cx)
@@ -99,6 +101,11 @@ impl<S: Stage> AttributeParser<S> for StabilityParser {
         (
             &[sym::rustc_allowed_through_unstable_modules],
             template!(NameValueStr: "deprecation message"),
+            gated_rustc_attr!(
+                rustc_allowed_through_unstable_modules,
+                "rustc_allowed_through_unstable_modules special cases accidental stabilizations of stable items \
+                through unstable paths"
+            ),
             |this, cx, args| {
                 reject_outside_std!(cx);
                 let Some(nv) = args.name_value() else {
@@ -160,6 +167,7 @@ impl<S: Stage> AttributeParser<S> for BodyStabilityParser {
     const ATTRIBUTES: AcceptMapping<Self, S> = &[(
         &[sym::rustc_default_body_unstable],
         template!(List: &[r#"feature = "name", reason = "...", issue = "N""#]),
+        Ungated,
         |this, cx, args| {
             reject_outside_std!(cx);
             if this.stability.is_some() {
@@ -183,6 +191,8 @@ pub(crate) struct RustcConstStableIndirectParser;
 impl<S: Stage> NoArgsAttributeParser<S> for RustcConstStableIndirectParser {
     const PATH: &[Symbol] = &[sym::rustc_const_stable_indirect];
     const ON_DUPLICATE: OnDuplicate<S> = OnDuplicate::Ignore;
+    const GATED: AttributeGate =
+        gated_rustc_attr!(rustc_const_stable_indirect, "this is an internal implementation detail");
     const ALLOWED_TARGETS: AllowedTargets = AllowedTargets::AllowList(&[
         Allow(Target::Fn),
         Allow(Target::Method(MethodKind::Inherent)),
@@ -213,6 +223,7 @@ impl<S: Stage> AttributeParser<S> for ConstStabilityParser {
         (
             &[sym::rustc_const_stable],
             template!(List: &[r#"feature = "name""#]),
+            Ungated,
             |this, cx, args| {
                 reject_outside_std!(cx);
 
@@ -229,6 +240,7 @@ impl<S: Stage> AttributeParser<S> for ConstStabilityParser {
         (
             &[sym::rustc_const_unstable],
             template!(List: &[r#"feature = "name""#]),
+            Ungated,
             |this, cx, args| {
                 reject_outside_std!(cx);
                 if !this.check_duplicate(cx)
@@ -241,10 +253,15 @@ impl<S: Stage> AttributeParser<S> for ConstStabilityParser {
                 }
             },
         ),
-        (&[sym::rustc_promotable], template!(Word), |this, cx, _| {
-            reject_outside_std!(cx);
-            this.promotable = true;
-        }),
+        (
+            &[sym::rustc_promotable],
+            template!(Word),
+            gated_rustc_attr!(rustc_promotable),
+            |this, cx, _| {
+                reject_outside_std!(cx);
+                this.promotable = true;
+            },
+        ),
     ];
     const ALLOWED_TARGETS: AllowedTargets = AllowedTargets::AllowList(&[
         Allow(Target::Fn),

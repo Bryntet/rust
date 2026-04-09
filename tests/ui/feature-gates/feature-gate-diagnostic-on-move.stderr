@@ -1,5 +1,19 @@
+error[E0658]: the `#[diagnostic::on_move]` attribute is an experimental feature
+  --> $DIR/feature-gate-diagnostic-on-move.rs:5:3
+   |
+LL |   #[diagnostic::on_move(
+   |  ___^
+LL | |
+LL | |     message = "Foo"
+LL | | )]
+   | |_^
+   |
+   = note: see issue #154181 <https://github.com/rust-lang/rust/issues/154181> for more information
+   = help: add `#![feature(diagnostic_on_move)]` to the crate attributes to enable
+   = note: this compiler was built on YYYY-MM-DD; consider upgrading it if it is out of date
+
 error[E0382]: use of moved value: `foo`
-  --> $DIR/feature-gate-diagnostic-on-move.rs:16:15
+  --> $DIR/feature-gate-diagnostic-on-move.rs:17:15
    |
 LL |     let foo = Foo;
    |         --- move occurs because `foo` has type `Foo`, which does not implement the `Copy` trait
@@ -9,14 +23,14 @@ LL |     let bar = foo;
    |               ^^^ value used here after move
    |
 note: consider changing this parameter type in function `takes_foo` to borrow instead if owning the value isn't necessary
-  --> $DIR/feature-gate-diagnostic-on-move.rs:11:17
+  --> $DIR/feature-gate-diagnostic-on-move.rs:12:17
    |
 LL | fn takes_foo(_: Foo) {}
    |    ---------    ^^^ this parameter takes ownership of the value
    |    |
    |    in this function
 note: if `Foo` implemented `Clone`, you could clone the value
-  --> $DIR/feature-gate-diagnostic-on-move.rs:9:1
+  --> $DIR/feature-gate-diagnostic-on-move.rs:10:1
    |
 LL | struct Foo;
    | ^^^^^^^^^^ consider implementing `Clone` for this type
@@ -24,6 +38,7 @@ LL | struct Foo;
 LL |     takes_foo(foo);
    |               --- you could clone this value
 
-error: aborting due to 1 previous error
+error: aborting due to 2 previous errors
 
-For more information about this error, try `rustc --explain E0382`.
+Some errors have detailed explanations: E0382, E0658.
+For more information about an error, try `rustc --explain E0382`.

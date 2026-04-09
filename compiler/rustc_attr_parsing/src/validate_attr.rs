@@ -8,7 +8,7 @@ use rustc_ast::{
     self as ast, AttrArgs, Attribute, DelimArgs, MetaItem, MetaItemInner, MetaItemKind, Safety,
 };
 use rustc_errors::{Applicability, PResult};
-use rustc_feature::{AttributeTemplate, BUILTIN_ATTRIBUTE_MAP};
+use rustc_feature::{AttributeTemplate, BUILTIN_ATTRIBUTES};
 use rustc_hir::AttrPath;
 use rustc_hir::lints::AttributeLintKind;
 use rustc_parse::parse_in;
@@ -21,14 +21,12 @@ use crate::session_diagnostics as errors;
 
 pub fn check_attr(psess: &ParseSess, attr: &Attribute) {
     // Built-in attributes are parsed in their respective attribute parsers, so can be ignored here
-    if attr.is_doc_comment()
-        || attr.name().is_some_and(|name| BUILTIN_ATTRIBUTE_MAP.contains_key(&name))
-    {
+    if attr.is_doc_comment() || attr.name().is_some_and(|name| BUILTIN_ATTRIBUTES.contains(&name)) {
         return;
     }
 
     let attr_item = attr.get_normal_item();
-    if let AttrArgs::Eq { .. } = attr_item.args.unparsed_ref().unwrap() {
+    if let Some(AttrArgs::Eq { .. }) = attr_item.args.unparsed_ref() {
         // All key-value attributes are restricted to meta-item syntax.
         match parse_meta(psess, attr) {
             Ok(_) => {}

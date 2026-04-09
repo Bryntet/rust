@@ -3,6 +3,7 @@
 //! diagnostic to not emit the custom diagnostic message
 //!
 #[diagnostic::on_move(
+//~^ ERROR the `#[diagnostic::on_move]` attribute is an experimental feature [E0658]
     message = "Foo"
 )]
 #[derive(Debug)]

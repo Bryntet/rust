@@ -48,15 +48,16 @@ pub(crate) struct LintParser {
 }
 
 trait Mapping<S: Stage> {
-    const MAPPING: (&'static [Symbol], AttributeTemplate, AcceptFn<LintParser, S>);
+    const MAPPING: (&'static [Symbol], AttributeTemplate, AttributeGate, AcceptFn<LintParser, S>);
 }
 impl<S: Stage, T: Lint> Mapping<S> for T {
-    const MAPPING: (&'static [Symbol], AttributeTemplate, AcceptFn<LintParser, S>) = (
+    const MAPPING: (&'static [Symbol], AttributeTemplate, AttributeGate, AcceptFn<LintParser, S>) = (
         &[T::ATTR_SYMBOL],
         template!(
             List: &["lint1", "lint1, lint2, ...", r#"lint1, lint2, lint3, reason = "...""#],
             "https://doc.rust-lang.org/reference/attributes/diagnostics.html#lint-check-attributes"
         ),
+        Ungated,
         |this, cx, args| {
             if let Some(lint_attr) = validate_lint_attr::<T, S>(cx, args) {
                 this.lint_attrs.push(lint_attr);
